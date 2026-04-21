@@ -202,12 +202,12 @@ def _build_search_query(form, user_logged_in, user_roles):
         params.append(vin)
 
     if keyword:
-        like_val = f"%{keyword}%"
+        like_val = f"%{keyword.lower()}%"
         where.append("""
-            (LOWER(v.manufacturer_name) LIKE LOWER(%s)
-             OR LOWER(v.model) LIKE LOWER(%s)
+            (LOWER(v.manufacturer_name) LIKE %s
+             OR LOWER(v.model) LIKE %s
              OR CAST(v.`year` AS CHAR) LIKE %s
-             OR LOWER(v.notes) LIKE LOWER(%s))
+             OR LOWER(v.notes) LIKE %s)
         """)
         params.extend([like_val, like_val, like_val, like_val])
 
