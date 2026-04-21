@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Parts Statistics — Midtown Motors{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('reports.menu') }}" class="mm-back-link">&larr; Back to Reports</a>
+
+<h1>Parts Statistics</h1>
+<p class="mm-text-secondary mm-mb-3">Total parts quantity and cost by vendor.</p>
+
+{% if rows %}
+<div class="mm-table-wrap">
+  <table class="mm-table">
+    <thead>
+      <tr>
+        <th>Vendor Name</th>
+        <th>Number of Parts</th>
+        <th>Total Dollar Amount</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><strong>{{ row.vendor_name }}</strong></td>
+        <td>{{ row.num_pieces_vendor }}</td>
+        <td>${{ "%.2f"|format(row.total_dollar_vendor) }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="mm-empty">
+  <div class="mm-empty-icon">&#128295;</div>
+  <p>No parts orders found.</p>
+</div>
+{% endif %}
+{% endblock %}

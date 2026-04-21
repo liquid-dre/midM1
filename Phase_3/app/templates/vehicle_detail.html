@@ -1,0 +1,262 @@
+{% extends "base.html" %}
+
+{% block title %}Vehicle Detail — {{ vehicle.vin }}{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('search.index') }}" class="mm-back-link">&larr; Back to Search</a>
+
+<h1>{{ vehicle.year }} {{ vehicle.manufacturer_name }} {{ vehicle.model }}</h1>
+<p class="mm-text-secondary mm-mb-3">{{ vehicle.vin }} &middot; {{ vehicle.vehicle_type_name }}</p>
+
+
+{# ============================================================
+   SECTION 1 — BASIC VEHICLE INFORMATION
+   ============================================================ #}
+<div class="mm-card mm-mb-3">
+  <h2 class="mm-mt-0" style="border:none;margin-top:0;padding-bottom:0;">Vehicle Information</h2>
+  <div class="mm-table-wrap mm-mb-2" style="box-shadow:none;border:none;">
+    <table class="mm-detail-table">
+      <tr><th>VIN</th><td><strong>{{ vehicle.vin }}</strong></td></tr>
+      <tr><th>Type</th><td>{{ vehicle.vehicle_type_name }}</td></tr>
+      <tr><th>Manufacturer</th><td>{{ vehicle.manufacturer_name }}</td></tr>
+      <tr><th>Model</th><td>{{ vehicle.model }}</td></tr>
+      <tr><th>Year</th><td>{{ vehicle.year }}</td></tr>
+      <tr>
+        <th>Condition</th>
+        <td>
+          <span class="mm-badge
+            {%- if vehicle.condition == 'Excellent' %} mm-badge-success
+            {%- elif vehicle.condition in ['Good', 'Very Good'] %} mm-badge-info
+            {%- elif vehicle.condition == 'Fair' %} mm-badge-warning
+            {%- else %} mm-badge-danger
+            {%- endif %}">{{ vehicle.condition }}</span>
+        </td>
+      </tr>
+      <tr><th>Fuel Type</th><td>{{ vehicle.fuel_type }}</td></tr>
+      <tr><th>Drivetrain</th><td>{{ vehicle.drive_train }}</td></tr>
+      <tr><th>Horsepower</th><td>{{ vehicle.horse_power }} hp</td></tr>
+      <tr><th>Color(s)</th><td>{{ vehicle.colors }}</td></tr>
+      <tr><th>Sale Price</th><td><strong>${{ "%.2f"|format(vehicle.sale_price) }}</strong></td></tr>
+      {% if vehicle.notes %}
+        <tr><th>Notes</th><td>{{ vehicle.notes }}</td></tr>
+      {% endif %}
+    </table>
+  </div>
+</div>
+
+
+{# ============================================================
+   SECTION 2 — SALES AGENT ACTIONS
+   ============================================================ #}
+{% if user.logged_in and (user.is_sales_agent or user.is_owner) %}
+  {% if not is_sold and not has_pending %}
+    <div class="mm-mb-3">
+      <a href="{{ url_for('sale.lookup_customer', vin=vehicle.vin) }}" class="mm-btn mm-btn-accent">
+        Sell Vehicle
+      </a>
+    </div>
+  {% endif %}
+{% endif %}
+
+
+{# ============================================================
+   SECTION 3 — ACQUISITION SPECIALIST VIEW
+   ============================================================ #}
+{% if user.logged_in and (user.is_acquisition_specialist or user.is_owner) %}
+
+  <h2>Purchase &amp; Parts Information</h2>
+
+  {% if purchase %}
+    <div class="mm-card mm-mb-3">
+      <div class="mm-table-wrap" style="box-shadow:none;border:none;">
+        <table class="mm-detail-table">
+          <tr><th>Purchase Price</th><td>${{ "%.2f"|format(purchase.purchase_price) }}</td></tr>
+          <tr><th>Purchase Date</th><td>{{ purchase.purchase_date }}</td></tr>
+          <tr><th>Total Parts Cost</th><td>${{ "%.2f"|format(total_parts_cost) }}</td></tr>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  <h3>Parts Orders</h3>
+  {% if parts_lines and parts_lines | length > 0 %}
+    <div class="mm-table-wrap mm-mb-3">
+      <table class="mm-table">
+        <thead>
+          <tr>
+            <th>Parts Order #</th>
+            <th>Order #</th>
+            <th>Vendor</th>
+            <th>Part Number</th>
+            <th>Description</th>
+            <th>Unit Price</th>
+            <th>Qty</th>
+            <th>Line Total</th>
+            <th>Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for part in parts_lines %}
+            {% if part.status == 'Ordered' %}{% set cur_idx = 0 %}
+            {% elif part.status == 'Received' %}{% set cur_idx = 1 %}
+            {% else %}{% set cur_idx = 2 %}{% endif %}
+            <tr>
+              <td>{{ part.parts_order_number }}</td>
+              <td>{{ part.order_ordinal }}</td>
+              <td>{{ part.vendor_name }}</td>
+              <td>{{ part.vendor_part_number }}</td>
+              <td>{{ part.description }}</td>
+              <td>${{ "%.2f"|format(part.unit_price) }}</td>
+              <td>{{ part.quantity }}</td>
+              <td>${{ "%.2f"|format(part.line_total) }}</td>
+              <td>
+                <form method="POST"
+                      action="{{ url_for('vehicle.update_part_status',
+                                   parts_order_number=part.parts_order_number,
+                                   vendor_part_number=part.vendor_part_number) }}">
+                  <input type="hidden" name="vin" value="{{ vehicle.vin }}">
+                  <select name="new_status" class="mm-select"
+                          style="padding:0.3rem 2rem 0.3rem 0.6rem;font-size:0.8rem;width:auto;"
+                          onchange="this.form.submit()"
+                          {% if part.status == 'Installed' %}disabled{% endif %}>
+                    <option value="Ordered"
+                            {% if part.status == 'Ordered' %}selected{% endif %}
+                            {% if cur_idx > 0 %}disabled{% endif %}>Ordered</option>
+                    <option value="Received"
+                            {% if part.status == 'Received' %}selected{% endif %}
+                            {% if cur_idx > 1 %}disabled{% endif %}>Received</option>
+                    <option value="Installed"
+                            {% if part.status == 'Installed' %}selected{% endif %}>Installed</option>
+                  </select>
+                </form>
+              </td>
+            </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  {% else %}
+    <div class="mm-alert mm-alert-warning mm-mb-3">No parts have been ordered for this vehicle yet.</div>
+  {% endif %}
+
+  <div class="mm-mb-3">
+    <a href="{{ url_for('parts.lookup', vin=vehicle.vin) }}" class="mm-btn mm-btn-outline">
+      + Add Parts Order
+    </a>
+  </div>
+
+{% endif %}
+
+
+{# ============================================================
+   SECTION 4 — OPERATING MANAGER VIEW
+   ============================================================ #}
+{% if user.logged_in and (user.is_operating_manager or user.is_owner) %}
+
+  <h2>Seller Information</h2>
+  {% if seller %}
+    <div class="mm-card mm-mb-3">
+      <div class="mm-table-wrap" style="box-shadow:none;border:none;">
+        <table class="mm-detail-table">
+          <tr><th>Seller Name</th><td>{{ seller.seller_name }}</td></tr>
+          <tr><th>Phone</th><td>{{ seller.phone_number }}</td></tr>
+          {% if seller.email %}
+            <tr><th>Email</th><td>{{ seller.email }}</td></tr>
+          {% endif %}
+          <tr><th>Address</th><td>{{ seller.street }}, {{ seller.city }}, {{ seller.state }} {{ seller.postal_code }}</td></tr>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+  {% if purchase %}
+    <h2>Acquisition Details</h2>
+    <div class="mm-card mm-mb-3">
+      <div class="mm-table-wrap" style="box-shadow:none;border:none;">
+        <table class="mm-detail-table">
+          <tr><th>Purchase Price</th><td>${{ "%.2f"|format(purchase.purchase_price) }}</td></tr>
+          <tr><th>Purchase Date</th><td>{{ purchase.purchase_date }}</td></tr>
+          <tr><th>Total Parts Cost</th><td>${{ "%.2f"|format(total_parts_cost) }}</td></tr>
+          <tr><th>Acquisition Specialist</th><td>{{ purchase.specialist_first_name }} {{ purchase.specialist_last_name }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>Parts Orders</h3>
+    {% if parts_lines and parts_lines | length > 0 %}
+      <div class="mm-table-wrap mm-mb-3">
+        <table class="mm-table">
+          <thead>
+            <tr>
+              <th>Parts Order #</th>
+              <th>Order #</th>
+              <th>Vendor</th>
+              <th>Part Number</th>
+              <th>Description</th>
+              <th>Unit Price</th>
+              <th>Qty</th>
+              <th>Line Total</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for part in parts_lines %}
+              <tr>
+                <td>{{ part.parts_order_number }}</td>
+                <td>{{ part.order_ordinal }}</td>
+                <td>{{ part.vendor_name }}</td>
+                <td>{{ part.vendor_part_number }}</td>
+                <td>{{ part.description }}</td>
+                <td>${{ "%.2f"|format(part.unit_price) }}</td>
+                <td>{{ part.quantity }}</td>
+                <td>${{ "%.2f"|format(part.line_total) }}</td>
+                <td>
+                  <span class="mm-badge
+                    {%- if part.status == 'Installed' %} mm-badge-success
+                    {%- elif part.status == 'Received' %} mm-badge-info
+                    {%- else %} mm-badge-warning
+                    {%- endif %}">{{ part.status }}</span>
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    {% else %}
+      <div class="mm-alert mm-alert-warning mm-mb-3">No parts have been ordered for this vehicle.</div>
+    {% endif %}
+  {% endif %}
+
+  {% if is_sold and sale %}
+    <h2>Sale Information</h2>
+    <div class="mm-card mm-mb-3">
+      <div class="mm-table-wrap" style="box-shadow:none;border:none;">
+        <table class="mm-detail-table">
+          <tr><th>Sale Date</th><td>{{ sale.sale_date }}</td></tr>
+          <tr><th>Sale Price</th><td><strong>${{ "%.2f"|format(vehicle.sale_price) }}</strong></td></tr>
+          <tr><th>Sales Agent</th><td>{{ sale.agent_first_name }} {{ sale.agent_last_name }}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <h3>Buyer Information</h3>
+    <div class="mm-card mm-mb-3">
+      <div class="mm-table-wrap" style="box-shadow:none;border:none;">
+        <table class="mm-detail-table">
+          <tr><th>Buyer Name</th><td>{{ sale.buyer_name }}</td></tr>
+          <tr><th>Phone</th><td>{{ sale.buyer_phone }}</td></tr>
+          {% if sale.buyer_email %}
+            <tr><th>Email</th><td>{{ sale.buyer_email }}</td></tr>
+          {% endif %}
+          <tr><th>Address</th><td>{{ sale.buyer_street }}, {{ sale.buyer_city }}, {{ sale.buyer_state }} {{ sale.buyer_postal_code }}</td></tr>
+        </table>
+      </div>
+    </div>
+  {% endif %}
+
+{% endif %}
+
+{% endblock %}
+
+

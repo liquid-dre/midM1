@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+{% block title %}Midtown Motors — Customer Lookup{% endblock %}
+ 
+{% block content %}
+
+<a href="{{ url_for('search.index') }}" class="mm-back-link">&larr; Back to Search</a>
+
+<h1>Customer Lookup</h1>
+<p class="mm-text-secondary mm-mb-3">Search by SSN or Tax ID to find an existing customer.</p>
+
+
+{# ============================================================
+   SECTION 1: SEARCH FORM
+   ============================================================ #}
+<div class="mm-card mm-mb-3">
+  <form method="POST" action="{{ url_for('customer.lookup') }}">
+
+    <div class="mm-radio-group">
+      <div class="mm-radio-option">
+        <input type="radio" name="search_type" value="ssn" id="st_ssn"
+               {{ 'checked' if search_type != 'tax_id' else '' }}>
+        <label for="st_ssn">SSN (Individual)</label>
+      </div>
+      <div class="mm-radio-option">
+        <input type="radio" name="search_type" value="tax_id" id="st_tax"
+               {{ 'checked' if search_type == 'tax_id' else '' }}>
+        <label for="st_tax">Tax ID (Business)</label>
+      </div>
+    </div>
+
+    <div class="mm-form-group" style="max-width: 360px;">
+      <label class="mm-label" for="search_value">SSN / Tax ID</label>
+      <input type="text" id="search_value" name="search_value"
+             value="{{ search_value or '' }}" class="mm-input" required placeholder="Enter SSN or Tax ID...">
+    </div>
+
+    <button type="submit" class="mm-btn mm-btn-primary">Search</button>
+
+  </form>
+</div>
+
+
+{# ============================================================
+   SECTION 2: CUSTOMER FOUND
+   ============================================================ #}
+{% if customer %}
+<div class="mm-card mm-mb-3" style="border-left: 4px solid var(--mm-success);">
+  <h2 class="mm-mt-0" style="border:none; margin-top:0; padding-bottom:0; color: var(--mm-success);">Customer Found</h2>
+
+  <div class="mm-table-wrap mm-mb-2" style="box-shadow:none; border:none;">
+    <table class="mm-detail-table">
+      <tr><th>Name</th><td><strong>{{ customer.name }}</strong></td></tr>
+      <tr><th>Phone</th><td>{{ customer.phone_number }}</td></tr>
+      <tr><th>Email</th><td>{{ customer.email or 'N/A' }}</td></tr>
+      <tr><th>Address</th><td>{{ customer.street }}, {{ customer.city }}, {{ customer.state }} {{ customer.postal_code }}</td></tr>
+    </table>
+  </div>
+
+  <form method="POST" action="{{ url_for('customer.confirm') }}" class="mm-flex mm-gap-1">
+    <input type="hidden" name="customer_id" value="{{ customer.customer_id }}">
+    <button type="submit" class="mm-btn mm-btn-accent">Confirm Customer</button>
+    <a href="{{ url_for('customer.lookup') }}" class="mm-btn mm-btn-ghost">Search Again</a>
+  </form>
+</div>
+{% endif %}
+
+
+{# ============================================================
+   SECTION 3: CUSTOMER NOT FOUND — ADD NEW
+   ============================================================ #}
+{% if not_found %}
+<div class="mm-card mm-mb-3" style="border-left: 4px solid var(--mm-warning);">
+  <h2 class="mm-mt-0" style="border:none; margin-top:0; padding-bottom:0;">No customer found — Add New Customer</h2>
+
+  <form method="POST" action="{{ url_for('customer.save') }}">
+
+    <div class="mm-radio-group mm-mb-2">
+      <div class="mm-radio-option">
+        <input type="radio" name="customer_type" value="individual" id="ct_ind"
+               {{ 'checked' if search_type != 'tax_id' else '' }}
+               onchange="toggle()">
+        <label for="ct_ind">Individual</label>
+      </div>
+      <div class="mm-radio-option">
+        <input type="radio" name="customer_type" value="business" id="ct_biz"
+               {{ 'checked' if search_type == 'tax_id' else '' }}
+               onchange="toggle()">
+        <label for="ct_biz">Business</label>
+      </div>
+    </div>
+
+    <fieldset>
+      <legend>Contact Information</legend>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="phone_number">Phone Number</label>
+            <input type="text" id="phone_number" name="phone_number" class="mm-input" required>
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="email">Email (optional)</label>
+            <input type="email" id="email" name="email" class="mm-input">
+          </div>
+        </div>
+        <div class="col-12">
+          <div class="mm-form-group">
+            <label class="mm-label" for="street">Street</label>
+            <input type="text" id="street" name="street" class="mm-input" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="city">City</label>
+            <input type="text" id="city" name="city" class="mm-input" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="state">State</label>
+            <input type="text" id="state" name="state" class="mm-input" required>
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="postal_code">Postal Code</label>
+            <input type="text" id="postal_code" name="postal_code" class="mm-input" required>
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset id="individual-fields">
+      <legend>Individual Details</legend>
+      <div class="row g-3">
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="ssn">SSN</label>
+            <input type="text" id="ssn" name="ssn" class="mm-input"
+                   value="{{ search_value if search_type != 'tax_id' else '' }}">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="first_name">First Name</label>
+            <input type="text" id="first_name" name="first_name" class="mm-input">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="last_name">Last Name</label>
+            <input type="text" id="last_name" name="last_name" class="mm-input">
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <fieldset id="business-fields">
+      <legend>Business Details</legend>
+      <div class="row g-3">
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="tax_id">Tax ID</label>
+            <input type="text" id="tax_id" name="tax_id" class="mm-input"
+                   value="{{ search_value if search_type == 'tax_id' else '' }}">
+          </div>
+        </div>
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="business_name">Business Name</label>
+            <input type="text" id="business_name" name="business_name" class="mm-input">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="primary_contact_title">Contact Title</label>
+            <input type="text" id="primary_contact_title" name="primary_contact_title" class="mm-input">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="primary_contact_first_name">Contact First Name</label>
+            <input type="text" id="primary_contact_first_name" name="primary_contact_first_name" class="mm-input">
+          </div>
+        </div>
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="primary_contact_last_name">Contact Last Name</label>
+            <input type="text" id="primary_contact_last_name" name="primary_contact_last_name" class="mm-input">
+          </div>
+        </div>
+      </div>
+    </fieldset>
+
+    <div class="mm-flex mm-gap-1">
+      <button type="submit" class="mm-btn mm-btn-primary">Save Customer</button>
+      <a href="{{ url_for('customer.lookup') }}" class="mm-btn mm-btn-ghost">Cancel</a>
+    </div>
+
+  </form>
+</div>
+
+<script>
+function toggle() {
+  var ind = document.getElementById('individual-fields');
+  var biz = document.getElementById('business-fields');
+  var isInd = document.querySelector('input[name="customer_type"]:checked').value === 'individual';
+  ind.style.display = isInd ? '' : 'none';
+  biz.style.display = isInd ? 'none' : '';
+}
+toggle();
+</script>
+{% endif %}
+
+{% endblock %}

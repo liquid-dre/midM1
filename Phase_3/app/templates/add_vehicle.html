@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block title %}Add Vehicle{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('search.index') }}" class="mm-back-link">&larr; Back to Search</a>
+
+<h1>Add Vehicle</h1>
+<p class="mm-text-secondary mm-mb-3">
+  Seller: <strong>{{ seller_name }}</strong>
+</p>
+
+{% if error %}
+<div class="mm-alert mm-alert-warning mm-mb-3">{{ error }}</div>
+{% endif %}
+
+<form method="POST" action="{{ url_for('vehicle.add_vehicle') }}" novalidate>
+
+  {# ── Vehicle Details ─────────────────────────────────── #}
+  <div class="mm-card mm-mb-3">
+    <fieldset>
+      <legend>Vehicle Details</legend>
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="vin">VIN <span style="color:var(--mm-danger)">*</span></label>
+            <input type="text" id="vin" name="vin" class="mm-input"
+                   maxlength="17" value="{{ request.form.get('vin', '') }}" required>
+            {% if errors and errors.get('vin') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['vin'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="vehicle_type_name">Vehicle Type <span style="color:var(--mm-danger)">*</span></label>
+            <select id="vehicle_type_name" name="vehicle_type_name" class="mm-select" required>
+              <option value="">-- Select --</option>
+              {% for vt in vehicle_types %}
+                <option value="{{ vt }}" {{ 'selected' if request.form.get('vehicle_type_name') == vt }}>{{ vt }}</option>
+              {% endfor %}
+            </select>
+            {% if errors and errors.get('vehicle_type_name') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['vehicle_type_name'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="manufacturer">Manufacturer <span style="color:var(--mm-danger)">*</span></label>
+            <select id="manufacturer" name="manufacturer" class="mm-select" required>
+              <option value="">-- Select --</option>
+              {% for mfr in manufacturers %}
+                <option value="{{ mfr }}" {{ 'selected' if request.form.get('manufacturer') == mfr }}>{{ mfr }}</option>
+              {% endfor %}
+            </select>
+            {% if errors and errors.get('manufacturer') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['manufacturer'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="model">Model Name <span style="color:var(--mm-danger)">*</span></label>
+            <input type="text" id="model" name="model" class="mm-input"
+                   maxlength="100" value="{{ request.form.get('model', '') }}" required>
+            {% if errors and errors.get('model') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['model'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="year">Model Year <span style="color:var(--mm-danger)">*</span></label>
+            <input type="text" id="year" name="year" class="mm-input"
+                   maxlength="4" placeholder="e.g. 2024"
+                   value="{{ request.form.get('year', '') }}" required>
+            <div style="font-size:0.75rem;color:var(--mm-text-muted);margin-top:0.2rem;">Max {{ max_model_year }}</div>
+            {% if errors and errors.get('year') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['year'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="condition">Condition <span style="color:var(--mm-danger)">*</span></label>
+            <select id="condition" name="condition" class="mm-select" required>
+              <option value="">-- Select --</option>
+              {% for cond in conditions %}
+                <option value="{{ cond }}" {{ 'selected' if request.form.get('condition') == cond }}>{{ cond }}</option>
+              {% endfor %}
+            </select>
+            {% if errors and errors.get('condition') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['condition'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-4">
+          <div class="mm-form-group">
+            <label class="mm-label" for="horse_power">Horsepower <span style="color:var(--mm-danger)">*</span></label>
+            <input type="text" id="horse_power" name="horse_power" class="mm-input"
+                   value="{{ request.form.get('horse_power', '') }}" required>
+            {% if errors and errors.get('horse_power') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['horse_power'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="fuel_type">Fuel Type <span style="color:var(--mm-danger)">*</span></label>
+            <select id="fuel_type" name="fuel_type" class="mm-select" required>
+              <option value="">-- Select --</option>
+              {% for ft in fuel_types %}
+                <option value="{{ ft }}" {{ 'selected' if request.form.get('fuel_type') == ft }}>{{ ft }}</option>
+              {% endfor %}
+            </select>
+            {% if errors and errors.get('fuel_type') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['fuel_type'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="drive_train">Drivetrain <span style="color:var(--mm-danger)">*</span></label>
+            <select id="drive_train" name="drive_train" class="mm-select" required>
+              <option value="">-- Select --</option>
+              {% for dt in drivetrains %}
+                <option value="{{ dt }}" {{ 'selected' if request.form.get('drive_train') == dt }}>{{ dt }}</option>
+              {% endfor %}
+            </select>
+            {% if errors and errors.get('drive_train') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['drive_train'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="mm-form-group">
+            <label class="mm-label">Color(s) <span style="color:var(--mm-danger)">*</span>
+              <span style="font-weight:400;text-transform:none;letter-spacing:0;">(select one or more)</span>
+            </label>
+            <div class="mm-radio-group mm-flex-wrap" style="flex-wrap:wrap;">
+              {% for color in colors %}
+                <div class="mm-radio-option">
+                  <input type="checkbox" id="color_{{ loop.index }}" name="colors" value="{{ color }}"
+                         {{ 'checked' if color in selected_colors }}>
+                  <label for="color_{{ loop.index }}">{{ color }}</label>
+                </div>
+              {% endfor %}
+            </div>
+            {% if errors and errors.get('colors') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['colors'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-12">
+          <div class="mm-form-group">
+            <label class="mm-label" for="notes">Notes <span style="font-weight:400;text-transform:none;letter-spacing:0;">(optional)</span></label>
+            <textarea id="notes" name="notes" class="mm-input" rows="3"
+                      maxlength="1000" style="resize:vertical;">{{ request.form.get('notes', '') }}</textarea>
+          </div>
+        </div>
+
+      </div>
+    </fieldset>
+  </div>
+
+  {# ── Purchase Details ────────────────────────────────── #}
+  <div class="mm-card mm-mb-3">
+    <fieldset>
+      <legend>Purchase Details</legend>
+      <div class="row g-3">
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="purchase_price">Purchase Price ($) <span style="color:var(--mm-danger)">*</span></label>
+            <input type="text" id="purchase_price" name="purchase_price" class="mm-input"
+                   placeholder="e.g. 15000.00"
+                   value="{{ request.form.get('purchase_price', '') }}" required>
+            {% if errors and errors.get('purchase_price') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['purchase_price'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+        <div class="col-md-6">
+          <div class="mm-form-group">
+            <label class="mm-label" for="purchase_date">Purchase Date <span style="color:var(--mm-danger)">*</span></label>
+            <input type="date" id="purchase_date" name="purchase_date" class="mm-input"
+                   value="{{ request.form.get('purchase_date', today) }}" required>
+            {% if errors and errors.get('purchase_date') %}
+              <div style="color:var(--mm-danger);font-size:0.8rem;margin-top:0.25rem;">{{ errors['purchase_date'] }}</div>
+            {% endif %}
+          </div>
+        </div>
+
+      </div>
+    </fieldset>
+  </div>
+
+  <div class="mm-flex mm-gap-1">
+    <button type="submit" class="mm-btn mm-btn-primary">Save Vehicle</button>
+    <a href="{{ url_for('search.index') }}" class="mm-btn mm-btn-ghost">Cancel</a>
+  </div>
+
+</form>
+{% endblock %}

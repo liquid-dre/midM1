@@ -1,0 +1,116 @@
+@startuml
+!theme aws-orange
+title Midtown Motors — Diagram 2: Transactional Forms\n(Add Vehicle, Parts Orders, Sell Vehicle)
+
+start
+
+' ═══════════════════════════════
+' ADD VEHICLE — STEP 1: SELLER LOOKUP
+' Acq Specialist / Owner only
+' Accessible via [Add Vehicle] on search screen
+' Customer lookup must happen before vehicle entry
+' ═══════════════════════════════
+:{{\nsalt\n{^"Add Vehicle — Step 1: Find or Add Seller"\n{\nSearch by: | (X) SSN () Tax ID\nSSN / Tax ID: | "                "\n[Search] | [Cancel]\n}\n}\n}};
+
+if (Customer found?) then (No — add new)
+  ' Individual: SSN unique identifier
+  ' Business: Tax ID unique identifier
+  ' Phone, postal code stored as strings (not numeric)
+  ' Email is optional for all customers
+  :{{\nsalt\n{^"Add New Seller"\n{\nType: | (X) Individual () Business\n.\n-- Common fields --\nStreet: | "                "\nCity: | "          " | State: | "  "\nPostal Code: | "     " | Phone: | "          "\nEmail: | "          " <i>(optional)\n.\n-- If Individual --\nFirst Name: | "          " | Last Name: | "          "\nSSN: | "          "\n.\n-- If Business --\nBusiness Name: | "                "\nTax ID: | "          "\nContact First: | "     " | Contact Last: | "     "\nContact Title: | "          "\n.\n[Save] | [Cancel]\n}\n}\n}};
+else (Yes — confirm)
+  :{{\nsalt\n{^"Confirm Seller"\n{\nName: | seller_name_val\nAddress: | seller_addr_val\nPhone: | seller_phone_val\n.\n[Confirm] | [Search Again]\n}\n}\n}};
+endif
+
+' ═══════════════════════════════
+' ADD VEHICLE — STEP 2: VEHICLE DETAILS
+' Seller confirmed before this form is shown
+' VIN must be unique in database
+' Year: 4-digit, <= current_year + 1
+' Type and Manufacturer from updatable lookup tables
+' Colors from fixed list; multiple allowed
+' ═══════════════════════════════
+:{{\nsalt\n{^"Add Vehicle — Step 2: Vehicle Details"\n{\nSeller: | seller_name_val <i>(confirmed)\n.\nVIN: | "                  "\nType: | ^Select Type^ | Condition: | ^Select Condition^\nManufacturer: | ^Select Manufacturer^\nModel: | "          " | Year: | "yyyy"\nFuel Type: | ^Select Fuel Type^\nColor(s): | ^Select Color^ | [+ Add Color]\nHorsepower: | "    " | Drivetrain: | ^Select Drivetrain^\nNotes: | "                  " <i>(optional)\n.\nPurchase Price: | "$         " | Purchase Date: | "yyyy-mm-dd"\n.\n[Submit] | [Cancel]\n}\n}\n}};
+
+' On success -> navigate to Vehicle Details (Acq Specialist view)
+
+stop
+
+start 
+
+' ═══════════════════════════════
+' MODIFY PART STATUS
+' Acq Specialist / Owner only
+' Triggered per part row in Vehicle Details parts list
+' Forward-only: ordered->received, ordered->installed,
+'   received->installed. Cannot revert. Cannot update installed.
+' ═══════════════════════════════
+:{{\nsalt\n{^"Modify Part Status"\n{\nOrder No: | order_no_val\nPart No: | part_no_val | Description: | description_val\nVendor: | vendor_name_val\nCurrent Status: | current_status_val\nNew Status: | ^Select New Status^\n<i>Valid: ordered->received, ordered->installed,\n<i>received->installed only. No revert.\n.\n[Update] | [Cancel]\n}\n}\n}};
+
+stop
+
+start
+
+' ═══════════════════════════════
+' ADD PARTS ORDER — STEP 1: VENDOR LOOKUP
+' Acq Specialist / Owner only
+' Accessible via [Add Parts Order] on Vehicle Details
+' Vendor names are unique; used as identifier
+' ═══════════════════════════════
+:{{\nsalt\n{^"Add Parts Order — Step 1: Find or Add Vendor"\n{\nVendor Name: | "                "\n[Search] | [Cancel]\n}\n}\n}};
+
+if (Vendor found?) then (No — add new)
+  :{{\nsalt\n{^"Add New Vendor"\n{\nVendor Name: | "                "\nStreet: | "                "\nCity: | "          " | State: | "  "\nPostal Code: | "     " | Phone: | "          "\n.\n[Save] | [Cancel]\n}\n}\n}};
+else (Yes — confirm)
+  :{{\nsalt\n{^"Confirm Vendor"\n{\nVendor: | vendor_name_val\nAddress: | vendor_addr_val\nPhone: | vendor_phone_val\n.\n[Confirm] | [Search Again]\n}\n}\n}};
+endif
+
+' ═══════════════════════════════
+' ADD PARTS ORDER — STEP 2: ORDER LINES
+' Order number auto-generated: VIN-001, VIN-002, ...
+' At least one part line required per order
+' Status defaults to 'ordered' for all new lines
+' Multiple lines per order supported via [+ Add Line]
+' Unit price and quantity tracked per line
+' ═══════════════════════════════
+:{{\nsalt\n{^"Add Parts Order — Step 2: Order Lines"\n{\nOrder No: | order_no_val <i>(auto-generated: VIN-NNN)\nVehicle VIN: | vin_val\nVendor: | vendor_name_val <i>(confirmed)\n.\n{#\nVendor Part No | Description | Unit Price | Qty | Status\n"          " | "                " | "$   " | "  " | ordered\n"          " | "                " | "$   " | "  " | ordered\n}\n[+ Add Line]\n.\n[Submit Order] | [Cancel]\n}\n}\n}};
+
+' On success -> return to Vehicle Details (same VIN)
+
+stop
+
+start
+
+' ═══════════════════════════════
+' SELL VEHICLE — STEP 1: BUYER LOOKUP
+' Sales Agent / Owner only
+' Accessible via [Sell Vehicle] on Vehicle Details
+' Pre-conditions (checked before button shown):
+'   vehicle.sold == FALSE
+'   all parts_order_line.status == 'installed'
+' Same customer lookup/add form as seller entry
+' ═══════════════════════════════
+:{{\nsalt\n{^"Confirm Sale — Step 1: Find or Add Buyer"\n{\nSearch by: | (X) SSN () Tax ID\nSSN / Tax ID: | "                "\n[Search] | [Cancel]\n}\n}\n}};
+
+if (Customer found?) then (No — add new)
+  :{{\nsalt\n{^"Add New Buyer"\n{\nType: | (X) Individual () Business\n.\n-- Common fields --\nStreet: | "                "\nCity: | "          " | State: | "  "\nPostal Code: | "     " | Phone: | "          "\nEmail: | "          " <i>(optional)\n.\n-- If Individual --\nFirst Name: | "          " | Last Name: | "          "\nSSN: | "          "\n.\n-- If Business --\nBusiness Name: | "                "\nTax ID: | "          "\nContact First: | "     " | Contact Last: | "     "\nContact Title: | "          "\n.\n[Save] | [Cancel]\n}\n}\n}};
+else (Yes — confirm)
+  :{{\nsalt\n{^"Confirm Buyer"\n{\nName: | buyer_name_val\nAddress: | buyer_addr_val\nPhone: | buyer_phone_val\n.\n[Confirm] | [Search Again]\n}\n}\n}};
+endif
+
+' ═══════════════════════════════
+' SELL VEHICLE — STEP 2: CONFIRM SALE
+' Sale price is system-calculated, not user-editable:
+'   sale_price = (purchase_price * 1.25)
+'              + (total_parts_cost * 1.10)
+' Sale date recorded at time of transaction
+' Sales agent is the currently logged-in user
+' ═══════════════════════════════
+:{{\nsalt\n{^"Confirm Sale — Step 2: Confirm"\n{\nVehicle VIN: | vin_val\nBuyer: | buyer_name_val <i>(confirmed)\nSale Price: | sale_price_val <i>(calculated, not editable)\nSale Date: | "yyyy-mm-dd"\nSales Agent: | current_user_name <i>(auto)\n.\n[Confirm Sale] | [Cancel]\n}\n}\n}};
+
+' On success -> navigate to Vehicle Details (same VIN)
+' Vehicle now shows as sold in all views
+
+stop
+
+@enduml

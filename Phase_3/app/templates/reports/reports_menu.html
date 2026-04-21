@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Reports — Midtown Motors{% endblock %}
+
+{% block content %}
+<h1>Reports</h1>
+<p class="mm-text-secondary mm-mb-3">View business analytics and performance metrics.</p>
+ 
+<div class="mm-report-grid">
+  <a href="{{ url_for('reports.avg_time_inventory') }}" class="mm-report-link">
+    <div class="mm-report-icon">&#9202;</div>
+    <div>Average Time in Inventory</div>
+  </a>
+  <a href="{{ url_for('reports.price_per_condition') }}" class="mm-report-link">
+    <div class="mm-report-icon">&#9733;</div>
+    <div>Price Per Condition</div>
+  </a>
+  <a href="{{ url_for('reports.monthly_sales') }}" class="mm-report-link">
+    <div class="mm-report-icon">&#128200;</div>
+    <div>Monthly Sales</div>
+  </a>
+  <a href="{{ url_for('reports.parts_statistics') }}" class="mm-report-link">
+    <div class="mm-report-icon">&#128295;</div>
+    <div>Parts Statistics</div>
+  </a>
+  <a href="{{ url_for('reports.seller_history') }}" class="mm-report-link">
+    <div class="mm-report-icon">&#128100;</div>
+    <div>Seller History</div>
+  </a>
+</div>
+{% endblock %}

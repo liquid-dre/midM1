@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}Monthly Drilldown — Midtown Motors{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('reports.monthly_sales') }}" class="mm-back-link">&larr; Back to Monthly Sales</a>
+ 
+<h1>Sales by Agent</h1>
+<p class="mm-text-secondary mm-mb-3">{{ year }}/{{ "%02d"|format(month) }}</p>
+
+{% if rows %}
+<div class="mm-table-wrap">
+  <table class="mm-table">
+    <thead>
+      <tr>
+        <th>Sales Agent</th>
+        <th>Vehicles Sold</th>
+        <th>Total Sales</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td><strong>{{ row.first_name }} {{ row.last_name }}</strong></td>
+        <td>{{ row.vehicles_sold }}</td>
+        <td><strong>${{ "%.2f"|format(row.total_sales) }}</strong></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% else %}
+<div class="mm-empty">
+  <div class="mm-empty-icon">&#128202;</div>
+  <p>No sales found for this period.</p>
+</div>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,88 @@
+@startuml
+!theme aws-orange
+title Midtown Motors — Diagram 1: Search & Vehicle Details\n(Public, Sales Agent, Acq Specialist, Manager/Owner)
+
+start
+
+' ═══════════════════════════════
+' PUBLIC LANDING PAGE
+' All users arrive here first
+' Displays count of vehicles available (no pending parts)
+' ═══════════════════════════════
+:{{\nsalt\n{^"Midtown Motors — Public Search"\n{\nVehicles available for sale: | <b>count_available\n.\nType: | ^Any^ | Manufacturer: | ^Any^\nYear: | "yyyy" | Fuel Type: | ^Any^\nDrivetrain: | ^Any^ | Color: | ^Any^\nKeyword: | "          "\n[Search] | [Clear]\n.\nUsername: | "          "\nPassword: | "*         "\n[Login]\n}\n}\n}};
+
+if (action?) then (Login)
+
+  :Authenticate against Staff table;
+
+  if (valid?) then (No)
+    :Display "Invalid username or password";
+    stop
+  endif
+
+  :Load role from Staff / Role;
+
+  ' ═══════════════════════════════
+  ' PRIVILEGED SEARCH SCREENS
+  ' Role determines counts shown,
+  ' VIN field, filter options,
+  ' and action buttons available
+  ' ═══════════════════════════════
+  if (role?) then (Acq Specialist)
+    :{{\nsalt\n{^"Vehicle Search — Acquisition Specialist"\n{\nParts pending: | count_pending | Available: | count_available\n.\nType: | ^Any^ | Manufacturer: | ^Any^\nYear: | "yyyy" | Fuel Type: | ^Any^\nDrivetrain: | ^Any^ | Color: | ^Any^\nKeyword: | "          " | VIN: | "          "\n.\n[Search] | [Clear] | [Add Vehicle] | [Logout]\n}\n}\n}};
+
+  else if (role?) then (Sales Agent)
+    :{{\nsalt\n{^"Vehicle Search — Sales Agent"\n{\nType: | ^Any^ | Manufacturer: | ^Any^\nYear: | "yyyy" | Fuel Type: | ^Any^\nDrivetrain: | ^Any^ | Color: | ^Any^\nKeyword: | "          " | VIN: | "          "\n.\n[Search] | [Clear] | [Logout]\n}\n}\n}};
+
+  else if (role?) then (Manager)
+    :{{\nsalt\n{^"Vehicle Search — Manager"\n{\nParts pending: | count_pending | Available: | count_available\n.\nType: | ^Any^ | Manufacturer: | ^Any^\nYear: | "yyyy" | Fuel Type: | ^Any^\nDrivetrain: | ^Any^ | Color: | ^Any^\nKeyword: | "          " | VIN: | "          "\nShow: | (X) Unsold () Sold () All\n.\n[Search] | [Clear] | [Reports] | [Logout]\n}\n}\n}};
+
+  else (Owner)
+    :{{\nsalt\n{^"Vehicle Search — Owner"\n{\nParts pending: | count_pending | Available: | count_available\n.\nType: | ^Any^ | Manufacturer: | ^Any^\nYear: | "yyyy" | Fuel Type: | ^Any^\nDrivetrain: | ^Any^ | Color: | ^Any^\nKeyword: | "          " | VIN: | "          "\nShow: | (X) Unsold () Sold () All\n.\n[Search] | [Clear] | [Add Vehicle] | [Reports] | [Logout]\n}\n}\n}};
+  endif
+
+else (Search — public)
+  ' falls through to search results below
+endif
+
+' ═══════════════════════════════
+' SEARCH RESULTS
+' Public: unsold, no pending parts only
+' Sales Agent: same as public
+' Acq Specialist / Owner: all unsold (incl. pending parts)
+' Manager / Owner: unsold / sold / all per filter
+' Sorted by VIN ASC — user cannot override
+' ═══════════════════════════════
+:{{\nsalt\n{^"Search Results (Below Vehicle Search Fields)"\n{\n{#\nVIN | Type | Manufacturer | Model | Year | Fuel | Drivetrain | Color(s) | HP | Sale Price\nvin_val | type_val | make_val | model_val | year_val | fuel_val | drive_val | color_val | hp_val | price_val\n}\n.\n[Vehicle Details]\n}\n}\n}};
+
+' ═══════════════════════════════
+' VEHICLE DETAILS — 4 role views
+' ═══════════════════════════════
+if (role?) then (Public)
+  :{{\nsalt\n{^"Vehicle Details — Public"\n{\nVIN: | vin_val | Type: | type_val\nManufacturer: | make_val | Model: | model_val\nYear: | year_val | Fuel: | fuel_val\nDrivetrain: | drive_val | Color(s): | color_val\nHP: | hp_val | Sale Price: | sale_price_val\nNotes: | notes_val\n.\n[Back to Search]\n}\n}\n}};
+else if (role?) then (Sales Agent)
+  ' Sale price = purchase_price * 1.25 + parts_cost * 1.10
+  ' [Sell Vehicle] only shown if: unsold AND all parts installed
+  :{{\nsalt\n{^"Vehicle Details — Sales Agent"\n{\nVIN: | vin_val | Type: | type_val\nManufacturer: | make_val | Model: | model_val\nYear: | year_val | Fuel: | fuel_val\nDrivetrain: | drive_val | Color(s): | color_val\nHP: | hp_val | Sale Price: | sale_price_val\nNotes: | notes_val\n.\n[Sell Vehicle] | [Back to Search]\n<i>[Sell Vehicle]: enabled if unsold AND no pending parts\n}\n}\n}};
+else if (role?) then (Acq Specialist)
+  ' Status update: ordered->received, ordered->installed,
+  '   received->installed (forward only, no revert)
+  :{{\nsalt\n{^"Vehicle Details — Acq Specialist"\n{\nVIN: | vin_val | Type: | type_val\nManufacturer: | make_val | Model: | model_val\nYear: | year_val | Fuel: | fuel_val\nDrivetrain: | drive_val | Color(s): | color_val\nHP: | hp_val | Sale Price: | sale_price_val\nNotes: | notes_val\n.\nPurchase Price: | purchase_price_val\nPurchase Date: | purchase_date_val\nTotal Parts Cost: | parts_cost_val\n.\n{#\nOrder No | Vendor | Part No | Description | Unit Price | Qty | Status | Action\norder_no | vendor_name | part_no | description | unit_price | qty | status | [Update Status]\n}\n.\n[Add Parts Order] | [Back to Search]\n}\n}\n}};
+else if (role?) then (Manager)
+  ' Read-only — no action buttons except Back
+  ' SSN / Tax ID never shown to any user via UI
+  ' Seller info, buyer info shown (excl. SSN/Tax ID)
+  ' Sale section shown only if vehicle is sold
+  :{{\nsalt\n{^"Vehicle Details — Manager"\n{\nVIN: | vin_val | Type: | type_val\nManufacturer: | make_val | Model: | model_val\nYear: | year_val | Fuel: | fuel_val\nDrivetrain: | drive_val | Color(s): | color_val\nHP: | hp_val | Sale Price: | sale_price_val\nNotes: | notes_val\n.\nPurchase Price: | purchase_price_val\nPurchase Date: | purchase_date_val\nParts Cost: | parts_cost_val\nAcq Specialist: | acq_first_val acq_last_val\n.\n-- Seller --\nName: | seller_name_val\nAddress: | seller_addr_val\nPhone: | seller_phone_val\nEmail: | seller_email_val\n<i>(SSN / Tax ID not shown)\n.\n{#\nOrder No | Vendor | Part No | Description | Unit Price | Qty | Status\norder_no | vendor_name | part_no | description | unit_price | qty | status\n}\n.\n-- Sale info (shown only if sold) --\nSale Date: | sale_date_val\nSale Price: | sale_price_val\nSales Agent: | agent_first_val agent_last_val\nBuyer Name: | buyer_name_val\nBuyer Address: | buyer_addr_val\nBuyer Phone: | buyer_phone_val\nBuyer Email: | buyer_email_val\n<i>(SSN / Tax ID not shown)\n.\n[Back to Search]\n}\n}\n}};
+else (Owner)
+  ' Owner has ALL permissions combined:
+  ' - View all info (like Manager)
+  ' - Update part status (like Acq Specialist)
+  ' - Add parts orders (like Acq Specialist)
+  ' - Sell vehicle (like Sales Agent, when conditions met)
+  :{{\nsalt\n{^"Vehicle Details — Owner"\n{\nVIN: | vin_val | Type: | type_val\nManufacturer: | make_val | Model: | model_val\nYear: | year_val | Fuel: | fuel_val\nDrivetrain: | drive_val | Color(s): | color_val\nHP: | hp_val | Sale Price: | sale_price_val\nNotes: | notes_val\n.\nPurchase Price: | purchase_price_val\nPurchase Date: | purchase_date_val\nParts Cost: | parts_cost_val\nAcq Specialist: | acq_first_val acq_last_val\n.\n-- Seller --\nName: | seller_name_val\nAddress: | seller_addr_val\nPhone: | seller_phone_val\nEmail: | seller_email_val\n<i>(SSN / Tax ID not shown)\n.\n{#\nOrder No | Vendor | Part No | Description | Unit Price | Qty | Status | Action\norder_no | vendor_name | part_no | description | unit_price | qty | status | [Update Status]\n}\n.\n[Add Parts Order] | [Sell Vehicle] | [Back to Search]\n<i>[Sell Vehicle]: enabled if unsold AND no pending parts\n.\n-- Sale info (shown only if sold) --\nSale Date: | sale_date_val\nSale Price: | sale_price_val\nSales Agent: | agent_first_val agent_last_val\nBuyer Name: | buyer_name_val\nBuyer Address: | buyer_addr_val\nBuyer Phone: | buyer_phone_val\nBuyer Email: | buyer_email_val\n<i>(SSN / Tax ID not shown)\n}\n}\n}};
+endif
+
+stop
+
+@enduml

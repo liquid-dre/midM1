@@ -1,0 +1,43 @@
+services:
+  db:
+    image: mysql:8.0
+    container_name: team15_mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: team15_database
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./schema.sql:/docker-entrypoint-initdb.d/01-schema.sql
+      - ./demo_data/customers.sql:/docker-entrypoint-initdb.d/02-customers.sql
+      - ./demo_data/vendors.sql:/docker-entrypoint-initdb.d/03-vendors.sql
+      - ./demo_data/users.sql:/docker-entrypoint-initdb.d/04-users.sql
+      - ./demo_data/vehicles.sql:/docker-entrypoint-initdb.d/05-vehicles.sql
+      - ./demo_data/parts.sql:/docker-entrypoint-initdb.d/06-parts.sql
+      - ./demo_data/orders_line.sql:/docker-entrypoint-initdb.d/07-orders_line.sql
+    ports:
+      - "3306:3306"
+
+  frontend-app:
+    build: .
+    container_name: team15_frontend
+    restart: on-failure
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+    volumes:
+      - .:/app # live code sync
+    environment:
+      FLASK_APP: app
+      FLASK_ENV: development
+      FLASK_DEBUG: 1
+      DB_HOST: db
+      DB_NAME: team15_database
+      DB_USER: admin
+      DB_PASS: admin
+
+volumes:
+  db_data:

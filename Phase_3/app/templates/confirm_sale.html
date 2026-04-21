@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block title %}Confirm Sale — {{ vehicle.vin }}{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('vehicle.detail', vin=vehicle.vin) }}" class="mm-back-link">&larr; Back to Vehicle</a>
+
+<h1>Confirm Sale</h1>
+<p class="mm-text-secondary mm-mb-3">Review the details below before finalising the sale.</p>
+
+
+{# ============================================================
+   VEHICLE SUMMARY
+   ============================================================ #}
+<div class="mm-card mm-mb-3">
+  <h2 class="mm-mt-0" style="border:none; margin-top:0; padding-bottom:0;">Vehicle</h2>
+  <div class="mm-table-wrap mm-mb-2" style="box-shadow:none; border:none;">
+    <table class="mm-detail-table">
+      <tr><th>VIN</th><td><strong>{{ vehicle.vin }}</strong></td></tr>
+      <tr><th>Year</th><td>{{ vehicle.year }}</td></tr>
+      <tr><th>Manufacturer</th><td>{{ vehicle.manufacturer_name }}</td></tr>
+      <tr><th>Model</th><td>{{ vehicle.model }}</td></tr>
+      <tr><th>Condition</th><td>{{ vehicle.condition }}</td></tr>
+      <tr>
+        <th>Sale Price</th>
+        <td><strong>${{ "%.2f"|format(vehicle.sale_price) }}</strong></td>
+      </tr>
+    </table>
+  </div>
+</div>
+
+
+{# ============================================================
+   BUYER SUMMARY
+   ============================================================ #}
+<div class="mm-card mm-mb-3">
+  <h2 class="mm-mt-0" style="border:none; margin-top:0; padding-bottom:0;">Buyer</h2>
+  <div class="mm-table-wrap mm-mb-2" style="box-shadow:none; border:none;">
+    <table class="mm-detail-table">
+      <tr><th>Name</th><td><strong>{{ buyer.name }}</strong></td></tr>
+      <tr><th>Phone</th><td>{{ buyer.phone_number }}</td></tr>
+      {% if buyer.email %}
+        <tr><th>Email</th><td>{{ buyer.email }}</td></tr>
+      {% endif %}
+      <tr><th>Address</th><td>{{ buyer.street }}, {{ buyer.city }}, {{ buyer.state }} {{ buyer.postal_code }}</td></tr>
+    </table>
+  </div>
+</div>
+
+
+{# ============================================================
+   SALE DATE
+   ============================================================ #}
+<div class="mm-card mm-mb-3">
+  <h2 class="mm-mt-0" style="border:none; margin-top:0; padding-bottom:0;">Sale Date</h2>
+  <p class="mm-mb-0">{{ sale_date }}</p>
+</div>
+
+
+{# ============================================================
+   ACTION
+   ============================================================ #}
+<form method="POST" action="{{ url_for('sale.confirm', vin=vehicle.vin) }}">
+  <div class="mm-flex mm-gap-1">
+    <button type="submit" class="mm-btn mm-btn-accent">Confirm Sale</button>
+    <a href="{{ url_for('vehicle.detail', vin=vehicle.vin) }}" class="mm-btn mm-btn-ghost">Cancel</a>
+  </div>
+</form>
+
+{% endblock %}

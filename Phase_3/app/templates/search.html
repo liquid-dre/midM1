@@ -1,0 +1,254 @@
+{#
+  search.html — Main landing page and vehicle search form.
+
+  This template handles three sections:
+    1. Stats bar          — Vehicle counts (for sale + parts pending for privileged users)
+    2. Search form        — Dropdowns (type, manufacturer, year, fuel type, drivetrain, color),
+                            keyword input, VIN input (staff only), sold filter (manager/owner only),
+                            and role-specific action buttons (Add Vehicle, Reports)
+    3. Results table      — Matching vehicles with details link; Status column for manager/owner
+
+  The page layout adapts based on login state:
+    - Public: 8-col search + 4-col login card side by side
+    - Logged in: full-width search (login card hidden)
+
+  All non-empty filters combine with AND on submit.
+#}
+{% extends "base.html" %}
+{% block title %}Midtown Motors — Search{% endblock %}
+
+{% block content %}
+
+<div class="row g-4">
+  <div class="{{ 'col-md-8' if not user.logged_in else 'col-12' }}">
+    <h1>Welcome to Midtown Motors</h1>
+    <p class="mm-text-secondary mm-mb-3">Find your next vehicle from our curated inventory.</p>
+
+    {# --- Stats --- #}
+    <div class="mm-stats">
+      <div class="mm-stat-card">
+        <div class="mm-stat-value">{{ vehicles_for_sale }}</div>
+        <div class="mm-stat-label">Vehicles for Sale</div>
+      </div>
+      {% if user.logged_in and (user.is_acquisition_specialist or user.is_operating_manager or user.is_owner) %}
+      <div class="mm-stat-card">
+        <div class="mm-stat-value">{{ vehicles_parts_pending }}</div>
+        <div class="mm-stat-label">Parts Pending</div>
+      </div>
+      {% endif %}
+    </div>
+
+    {# --- Search Form --- #}
+    <div class="mm-card mm-mb-3">
+      <h2 class="mm-mt-0" style="border: none; margin-top: 0; padding-bottom: 0;">Search Vehicles</h2>
+      <form method="POST" action="{{ url_for('search.search') }}" id="searchForm">
+
+        <div class="row g-3">
+          {# Type #}
+          <div class="col-md-4">
+            <label class="mm-label" for="vehicle_type">Type</label>
+            <select name="vehicle_type" id="vehicle_type" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for vt in vehicle_types %}
+              <option value="{{ vt }}" {{ 'selected' if selected_vehicle_type == vt else '' }}>{{ vt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Manufacturer #}
+          <div class="col-md-4">
+            <label class="mm-label" for="manufacturer">Manufacturer</label>
+            <select name="manufacturer" id="manufacturer" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for m in manufacturers %}
+              <option value="{{ m }}" {{ 'selected' if selected_manufacturer == m else '' }}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Year #}
+          <div class="col-md-4">
+            <label class="mm-label" for="year">Year</label>
+            <select name="year" id="year" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for y in years %}
+              <option value="{{ y }}" {{ 'selected' if selected_year == y|string else '' }}>{{ y }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Fuel Type #}
+          <div class="col-md-4">
+            <label class="mm-label" for="fuel_type">Fuel Type</label>
+            <select name="fuel_type" id="fuel_type" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for ft in fuel_types %}
+              <option value="{{ ft }}" {{ 'selected' if selected_fuel_type == ft else '' }}>{{ ft }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Drivetrain #}
+          <div class="col-md-4">
+            <label class="mm-label" for="drive_train">Drivetrain</label>
+            <select name="drive_train" id="drive_train" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for dt in drivetrains %}
+              <option value="{{ dt }}" {{ 'selected' if selected_drive_train == dt else '' }}>{{ dt }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Color #}
+          <div class="col-md-4">
+            <label class="mm-label" for="color">Color</label>
+            <select name="color" id="color" class="mm-select mm-dropdown-filter">
+              <option value="">Any</option>
+              {% for c in colors %}
+              <option value="{{ c }}" {{ 'selected' if selected_color == c else '' }}>{{ c }}</option>
+              {% endfor %}
+            </select>
+          </div>
+
+          {# Keyword #}
+          <div class="col-md-{{ '6' if user.logged_in else '12' }}">
+            <label class="mm-label" for="keyword">Keyword</label>
+            <input type="text" name="keyword" id="keyword" class="mm-input" placeholder="Search manufacturer, model, year, or notes" value="{{ selected_keyword | default('', true) }}">
+          </div>
+
+          {# VIN — staff only #}
+          {% if user.logged_in %}
+          <div class="col-md-6">
+            <label class="mm-label" for="vin">VIN</label>
+            <input type="text" name="vin" id="vin" class="mm-input" placeholder="Exact VIN" value="{{ selected_vin | default('', true) }}">
+          </div>
+          {% endif %}
+
+          {# Sold filter — Manager / Owner only #}
+          {% if user.is_operating_manager or user.is_owner %}
+          <div class="col-12">
+            <label class="mm-label">Show</label>
+            <div class="mm-radio-group">
+              <div class="mm-radio-option">
+                <input type="radio" name="sold_filter" value="all" id="filter_all" {{ 'checked' if selected_sold_filter | default('all') == 'all' else '' }}>
+                <label for="filter_all">All</label>
+              </div>
+              <div class="mm-radio-option">
+                <input type="radio" name="sold_filter" value="unsold" id="filter_unsold" {{ 'checked' if selected_sold_filter == 'unsold' else '' }}>
+                <label for="filter_unsold">Unsold</label>
+              </div>
+              <div class="mm-radio-option">
+                <input type="radio" name="sold_filter" value="sold" id="filter_sold" {{ 'checked' if selected_sold_filter == 'sold' else '' }}>
+                <label for="filter_sold">Sold</label>
+              </div>
+            </div>
+          </div>
+          {% endif %}
+        </div>
+
+        <div style="margin-top: 1rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">
+          <button type="submit" class="mm-btn mm-btn-primary">Search</button>
+          <a href="{{ url_for('search.index') }}" class="mm-btn mm-btn-outline">Clear</a>
+
+          {% if user.logged_in and (user.is_acquisition_specialist or user.is_owner) %}
+          <a href="{{ url_for('purchase.add_vehicle') }}" class="mm-btn mm-btn-outline">Add Vehicle</a>
+          {% endif %}
+
+          {% if user.logged_in and (user.is_operating_manager or user.is_owner) %}
+          <a href="{{ url_for('reports.menu') }}" class="mm-btn mm-btn-outline">Reports</a>
+          {% endif %}
+        </div>
+      </form>
+    </div>
+
+    {# --- Results --- #}
+    {% if results is not none %}
+      {% if results | length == 0 %}
+        <div class="mm-alert mm-alert-warning">Sorry, it looks like we don't have that in stock!</div>
+      {% else %}
+        <p class="mm-text-secondary mm-mb-1" style="font-size: 0.85rem;">Showing <strong>{{ results|length }}</strong> vehicle{{ 's' if results|length != 1 else '' }}</p>
+        <div class="mm-table-wrap">
+        <table class="mm-table">
+          <thead>
+            <tr>
+              <th>VIN</th>
+              <th>Type</th>
+              <th>Manufacturer</th>
+              <th>Model</th>
+              <th>Year</th>
+              <th>Condition</th>
+              <th>Fuel Type</th>
+              <th>Drivetrain</th>
+              <th>Color(s)</th>
+              <th>Horsepower</th>
+              <th>Sale Price</th>
+              {% if user.is_operating_manager or user.is_owner %}
+              <th>Status</th>
+              {% endif %}
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for row in results %}
+            <tr>
+              <td><strong>{{ row.vin }}</strong></td>
+              <td>{{ row.vehicle_type_name }}</td>
+              <td>{{ row.manufacturer_name }}</td>
+              <td>{{ row.model }}</td>
+              <td>{{ row.year }}</td>
+              <td>
+                <span class="mm-badge
+                  {%- if row.condition == 'Excellent' %} mm-badge-success
+                  {%- elif row.condition == 'Good' or row.condition == 'Very Good' %} mm-badge-info
+                  {%- elif row.condition == 'Fair' %} mm-badge-warning
+                  {%- else %} mm-badge-danger
+                  {%- endif %}">{{ row.condition }}</span>
+              </td>
+              <td>{{ row.fuel_type }}</td>
+              <td>{{ row.drive_train }}</td>
+              <td>{{ row.colors }}</td>
+              <td>{{ row.horse_power }}</td>
+              <td><strong>{{ row.sale_price }}</strong></td>
+              {% if user.is_operating_manager or user.is_owner %}
+              <td>
+                {% if row.status == 'Sold' %}
+                  <span class="mm-badge mm-badge-danger">Sold</span>
+                {% else %}
+                  <span class="mm-badge mm-badge-success">Unsold</span>
+                {% endif %}
+              </td>
+              {% endif %}
+              <td><a href="{{ url_for('vehicle.detail', vin=row.vin) }}" class="mm-btn mm-btn-outline mm-btn-sm">Details</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+        </div>
+      {% endif %}
+    {% endif %}
+  </div>
+
+  {# --- Login Card --- #}
+  {% if not user.logged_in %}
+  <div class="col-md-4" style="position: sticky; top: 5rem; align-self: start;">
+    <div class="mm-login-card">
+      <div class="mm-login-header">Staff Login</div>
+      <div class="mm-login-body">
+        <form method="POST" action="{{ url_for('auth.login') }}">
+          <div class="mm-form-group">
+            <label class="mm-label" for="login-user">Username</label>
+            <input type="text" name="username" id="login-user" class="mm-input" required>
+          </div>
+          <div class="mm-form-group">
+            <label class="mm-label" for="login-pass">Password</label>
+            <input type="password" name="password" id="login-pass" class="mm-input" required>
+          </div>
+          <button type="submit" class="mm-btn mm-btn-dark mm-btn-w-full">Login</button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endif %}
+</div>
+
+{% endblock %}

@@ -1,0 +1,89 @@
+@startuml
+!theme aws-orange
+title Midtown Motors — Diagram 3: Reports\n(Manager / Owner only)
+
+start
+
+' ═══════════════════════════════
+' REPORTS SELECTION
+' Manager / Owner only
+' Accessible via [Reports] on search screen
+' ═══════════════════════════════
+:{{\nsalt\n{^"Reports Selection"\n{\n() Seller History\n() Average Time in Inventory\n() Price Per Condition\n() Parts Statistics\n() Monthly Sales\n.\n[View Report] | [Back to Vehicle Search]\n}\n}\n}};
+
+if (report?) then (Seller History)
+
+  ' ═══════════════════════════════
+  ' SELLER HISTORY
+  ' One row per seller who has sold at least one vehicle
+  ' seller_name: individual -> first+last as one column
+  '              business -> business_name as one column
+  ' Averages calculated over all vehicles from that seller
+  ' Red highlight if: avg_parts_qty >= 5
+  '               OR avg_parts_cost >= $500
+  ' Sorted: total_vehicles DESC, avg_purchase_price ASC
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Seller History"\n{\n{#\nSeller Name | Total Vehicles | Avg Purchase Price | Avg Parts Qty | Avg Parts Cost\nseller_name | total_vehicles | avg_purchase_price | avg_parts_qty | avg_parts_cost\n}\n<i>Row highlighted red: avg_parts_qty >= 5 OR avg_parts_cost >= $500\n.\n[Back to Reports]\n}\n}\n}};
+
+else if (report?) then (Avg Time in Inventory)
+
+  ' ═══════════════════════════════
+  ' AVERAGE TIME IN INVENTORY
+  ' One row per vehicle type (all types shown)
+  ' Days = sale_date - purchase_date + 1
+  '   (same-day purchase+sale counts as 1 day)
+  ' N/A shown if no vehicles of that type have been sold
+  ' Sorted: vehicle_type ASC
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Average Time in Inventory"\n{\n{#\nVehicle Type | Avg Days in Inventory\nConvertible | avg_days_val\nCoupe | avg_days_val\nMinivan | avg_days_val\nOther | avg_days_val\nSedan | avg_days_val\nSUV | avg_days_val\nTruck | avg_days_val\nVan | avg_days_val\n}\n<i>N/A if no vehicles of that type have been sold\n.\n[Back to Reports]\n}\n}\n}};
+
+else if (report?) then (Price Per Condition)
+
+  ' ═══════════════════════════════
+  ' PRICE PER CONDITION
+  ' Matrix report: conditions as rows, vehicle types as columns
+  ' Shows avg purchase price paid by Midtown Motors
+  ' $0 if no vehicles purchased in that type+condition combo
+  ' Conditions (rows): Excellent, Very Good, Good, Fair, Rough
+  '   — descending order
+  ' Vehicle types (columns): all types, alphabetical order
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Price Per Condition"\n{\n{#\nCondition | Convertible | Coupe | Minivan | Other | Sedan | SUV | Truck | Van\nExcellent | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price\nVery Good | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price\nGood | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price\nFair | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price\nRough | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price | avg_price\n}\n<i>$0 if no vehicles purchased in that type+condition combination\n.\n[Back to Reports]\n}\n}\n}};
+
+else if (report?) then (Parts Statistics)
+
+  ' ═══════════════════════════════
+  ' PARTS STATISTICS
+  ' One row per vendor who has supplied parts
+  ' total_qty: sum of all part quantities from that vendor
+  ' total_spend: sum of (unit_price * quantity) per vendor
+  ' Sorted: vendor_name ASC
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Parts Statistics"\n{\n{#\nVendor Name | Total Parts Qty | Total Spend\nvendor_name | total_qty | total_spend\n}\n.\n[Back to Reports]\n}\n}\n}};
+
+else (Monthly Sales)
+
+  ' ═══════════════════════════════
+  ' MONTHLY SALES — SUMMARY
+  ' One row per year+month that has at least one sale
+  ' net_income = sale_price - purchase_price - parts_cost
+  ' Sorted: year DESC, month DESC
+  ' Each row has [Drilldown] link
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Monthly Sales"\n{\n{#\nYear | Month | Vehicles Sold | Gross Sales | Net Income | Action\nyear_val | month_val | vehicles_sold | gross_income | net_income | [Drilldown]\n}\n.\n[Back to Reports]\n}\n}\n}};
+
+  ' ═══════════════════════════════
+  ' MONTHLY SALES — DRILLDOWN
+  ' Shows top sales agents for selected year+month
+  ' One row per sales agent who made at least one sale
+  '   in that month
+  ' Sorted: vehicles_sold DESC, total_sales DESC
+  '   (ties broken by total sales value)
+  ' ═══════════════════════════════
+  :{{\nsalt\n{^"Monthly Sales Drilldown — month_val year_val"\n{\n{#\nSales Agent | Vehicles Sold | Total Sales\nagent_name | vehicles_sold | total_sales\n}\n.\n[Back to Monthly Sales]\n}\n}\n}};
+
+endif
+
+end
+
+@enduml

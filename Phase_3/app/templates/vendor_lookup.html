@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Midtown Motors - Lookup/Add new vendor{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('parts.lookup', vin=vin) }}" class="mm-back-link">&larr; Back to Add Parts Order</a>
+
+{# Always visible the first empty row and with following attributes: vendor_name, street, phone, postal_code, city, and state #}
+
+<h1>Parts Vendor Management</h1>
+
+<form method="POST" action="{{ url_for('vendor.lookup') }}">
+    <div class="mm-card mm-mb-3">
+        <h2 class="mm-mt-0" style="border: none; margin-top: 0; padding-bottom: 0;">Search existint Vendor/Add new Vendor</h2>
+        <div class="mm-table-wrap mm-mb-3">
+            <table class="mm-table" style="width:auto; margin:auto;">
+                <thead>
+                    <tr>
+                        <th style="text-align:center;">Vendor Name</th>
+                        <th style="text-align:center;">Street</th>
+                        <th style="text-align:center;">City</th>
+                        <th style="text-align:center;">State</th>
+                        <th style="text-align:center;">Postal Code</th>
+                        <th style="text-align:center;">Phone</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><input style="text-align:center; width:200px;" type="text" name="vendor_name" value="{{ vendor.vendor_name if vendor else '' }}"></td>
+                        <td><input style="text-align:center; width:200px;" type="text" name="street" value="{{ vendor.street if vendor else '' }}"></td>
+                        <td><input style="text-align:center; width:120px;" type="text" name="city" value="{{ vendor.city if vendor else '' }}"></td>
+                        <td><input style="text-align:center; width:60px;" type="text" name="state" value="{{ vendor.state if vendor else '' }}"></td>
+                        <td><input style="text-align:center; width:100px;" type="text" name="postal_code" value="{{ vendor.postal_code if vendor else '' }}"></td>
+                        <td><input style="text-align:center; width:120px;" type="text" name="phone_number" value="{{ vendor.phone_number if vendor else '' }}"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div>
+        <button type="submit" class="mm-btn mm-btn-outline" name="search" value="1">Search Vendor</button>
+        <button type="submit" class="mm-btn mm-btn-primary" name="new_vendor" value="1">+ Add Vendor</button>
+        <button type="submit" class="mm-btn mm-btn-outline" name="clear" value="1">Clear</button>
+    <div>
+</form>
+
+{% for message in get_flashed_messages() %}
+  <p>{{ message }}</p>
+{% endfor %}
+
+{% endblock %}
+
+
+

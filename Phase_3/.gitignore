@@ -1,0 +1,9 @@
+# Virtual environment
+venv/
+
+# Python bytecode (generated automatically when Python imports modules)
+__pycache__/
+*.pyc
+
+# Environment variables file (if you create one for secrets)
+.env

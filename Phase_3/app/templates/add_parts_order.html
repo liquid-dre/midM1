@@ -1,0 +1,86 @@
+{% extends "base.html" %}
+{% block title %}Midtown Motors — Parts Order{% endblock %}
+
+{% block content %}
+
+<a href="{{ url_for('vehicle.detail', vin=vin) }}" class="mm-back-link">&larr; Back to Vehicle Detail</a>
+
+{# Show all parts associated to a vehicle and leave the last row empty to add more if needed: parts_order_number, order_ordinal, vendor_name, vendor_part_number, status, quantity, unit_price, description #}
+
+<h1>Lookup/Addition of Parts</h1>
+
+<form method="POST" action="{{ url_for('parts.save', vin=vin) }}">
+    <div class="mm-card mm-mb-3">
+        <h2 class="mm-mt-0" style="border: none; margin-top: 0; padding-bottom: 0;">Parts orders for VIN: {{ vin }}</h2>
+        <div class="mm-table-wrap mm-mb-3">
+            <table class="mm-table" style="width:auto; margin:auto;" id="parts-table">
+                <thead>
+                    <tr>
+                        <th style="text-align:center;">Parts Order Number #</th>
+                        <th style="text-align:center;">Ordinal</th>
+                        <th style="text-align:center;">Vendor Name</th>
+                        <th style="text-align:center;">Vendor Part Number</th>
+                        <th style="text-align:center;">Status</th>
+                        <th style="text-align:center;">Quantity</th>
+                        <th style="text-align:center;">Unit Price</th>
+                        <th style="text-align:center;">Description</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in orders %}
+                    <tr>
+                        <td style="text-align:center;">{{ row["parts_order_number"] }}</td>
+                        <td style="text-align:center;">{{ row["order_ordinal"] }}</td>
+                        <td style="text-align:center;">{{ row["vendor_name"] }}</td>
+                        <td style="text-align:center;">{{ row["vendor_part_number"] }}</td>
+                        <td style="text-align:center;">{{ row["status"] }}</td>
+                        <td style="text-align:center;">{{ row["quantity"] }}</td>
+                        <td style="text-align:center;">{{ row["unit_price"] }}</td>
+                        <td style="text-align:center;">{{ row["description"] }}</td>
+                    </tr>
+                    {% endfor %}
+                    
+                    <!-- Empty row where the user has to fill in the data -->
+                    <tr class="input-row">
+                        <td style="text-align:center; width:200px;">{{ next_parts }}</td>
+                        <td style="text-align:center; width:70px;">{{ next_ordinal }}</td>
+                        <td>
+                            <select name="vendor_name[]" class="mm-select mm-dropdown-filter"><option value="">Select vendor</option>
+                                {% for vendor in vendors %}
+                                    <option value="{{ vendor.vendor_name }}">{{ vendor.vendor_name }}</option>
+                                {% endfor %}
+                            </select>
+                        </td>
+                        <td><input style="text-align:center; width:150px;" type="text" name="vendor_part_number[]"></td>
+                        <td style="text-align:center; width:100px;">Ordered</td>
+                        <td><input style="text-align:center; width:80px;" type="number" name="quantity[]"></td>
+                        <td><input style="text-align:center; width:80px;" type="number" step="0.01" name="unit_price[]"></td>
+                        <td><input style="text-align:center; width:200px;" type="text" name="description[]"></td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+        <button type="button" onclick="newPart()" class="mm-btn mm-btn-primary">+ Add Part Line</button>
+    </div>
+        
+    <div>
+        <button type="submit" class="mm-btn mm-btn-primary" name="add_part" value="1">Save Part Order</button>
+        <button type="submit" class="mm-btn mm-btn-primary" name="new_vendor" value="1" formnovalidate>+ Add New Vendor</button>
+        <button type="submit" class="mm-btn mm-btn-outline" name="clear" value="1" formnovalidate>Clear</button>
+    </div>
+</form>
+
+<script>
+    function newPart() {
+        const tbody = document.querySelector("#parts-table tbody");
+        const newRow = document.querySelector(".input-row").cloneNode(true);
+        newRow.querySelectorAll("input, select").forEach(el => el.value = "");
+        tbody.appendChild(newRow);
+    }
+</script>
+
+{% for message in get_flashed_messages() %}
+  <p>{{ message }}</p>
+{% endfor %}
+
+{% endblock %}

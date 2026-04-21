@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Monthly Sales — Midtown Motors{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('reports.menu') }}" class="mm-back-link">&larr; Back to Reports</a>
+
+<h1>Monthly Sales Report</h1>
+<p class="mm-text-secondary mm-mb-3">Revenue summary by month.</p>
+ 
+<div class="mm-table-wrap">
+  <table class="mm-table">
+    <thead>
+      <tr>
+        <th>Year</th>
+        <th>Month</th>
+        <th>Vehicles Sold</th>
+        <th>Gross Sales Income</th>
+        <th>Net Income</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>{{ row.sale_year }}</td>
+        <td>{{ row.sale_month }}</td>
+        <td><strong>{{ row.total_vehicles_sold }}</strong></td>
+        <td>${{ "%.2f"|format(row.gross_sales_income) }}</td>
+        <td><strong>${{ "%.2f"|format(row.net_income) }}</strong></td>
+        <td>
+          <a href="{{ url_for('reports.monthly_drilldown', year=row.sale_year, month=row.sale_month) }}"
+             class="mm-btn mm-btn-outline mm-btn-sm">Drilldown</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

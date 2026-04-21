@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Price Per Condition — Midtown Motors{% endblock %}
+
+{% block content %}
+<a href="{{ url_for('reports.menu') }}" class="mm-back-link">&larr; Back to Reports</a>
+
+<h1>Price Per Condition</h1>
+<p class="mm-text-secondary mm-mb-3">Average purchase price by condition and vehicle type.</p>
+ 
+<div class="mm-table-wrap">
+  <table class="mm-table">
+    <thead>
+      <tr>
+        <th>Condition</th>
+        {% for t in types %}
+        <th>{{ t }}</th>
+        {% endfor %}
+      </tr>
+    </thead>
+    <tbody>
+      {% for row in rows %}
+      <tr>
+        <td>
+          <span class="mm-badge
+            {%- if row.condition == 'Excellent' %} mm-badge-success
+            {%- elif row.condition == 'Very Good' or row.condition == 'Good' %} mm-badge-info
+            {%- elif row.condition == 'Fair' %} mm-badge-warning
+            {%- else %} mm-badge-danger
+            {%- endif %}">{{ row.condition }}</span>
+        </td>
+        {% for t in types %}
+        <td>{{ row[t] }}</td>
+        {% endfor %}
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}

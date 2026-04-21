@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+{% block title %}Seller History — Midtown Motors{% endblock %}
+
+{% block content %}
+<!-- back link to the reports menu -->
+<a href="{{ url_for('reports.menu') }}" class="mm-back-link">&larr; Back to Reports</a>
+
+<h1>Seller History</h1>
+<p class="mm-text-secondary mm-mb-3">History of sellers and their vehicle sales.</p>
+
+<div class="mm-table-wrap">
+  <table class="mm-table">
+    <thead>
+      <tr>
+        <th>Seller Name</th>
+        <th>Total Vehicles</th>
+        <th>Average Purchase Price</th>
+        <th>Average Parts Quantity</th>
+        <th>Average Parts Cost</th>
+      </tr>
+    </thead>
+    <tbody>
+      <!-- loop over every seller row returned by the query -->
+      {% for row in rows %}
+
+        <!-- the SQL sets highlight=1 if avg parts quantity >= 5 or avg parts cost >= $500
+             those sellers might be selling lower quality vehicles, so we flag them red -->
+        <tr {% if row.highlight %}class="mm-row-flag"{% endif %}>
+          <td><strong>{{ row.seller_name }}</strong></td>
+          <td>{{ row.total_vehicles }}</td>
+          <td>${{ row.avg_purchase_price }}</td>
+          <td>{{ row.avg_parts_quantity }}</td>
+          <td>${{ row.avg_parts_cost }}</td>
+        </tr>
+
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
